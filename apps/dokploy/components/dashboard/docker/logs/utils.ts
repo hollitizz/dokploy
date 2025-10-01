@@ -59,14 +59,22 @@ export function parseLogs(logString: string): LogLine[] {
       const match = line.match(logRegex);
       if (!match) return null;
 
-      const [, , timestamp, message] = match;
+      const [, , tsBracket, tsIso, tsUtc, message] = match;
+      const timestamp = tsBracket || tsIso || tsUtc || null;
 
       if (!message?.trim()) return null;
 
+      const cleanedMessage = message
+        ?.replace(
+          /\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?Z|\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\.\d{3}(?: UTC)?|\[\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\.\d{3}\]/g,
+          ""
+        )
+        .trim();
+
       return {
-        rawTimestamp: timestamp ?? null,
+        rawTimestamp: timestamp,
         timestamp: timestamp ? new Date(timestamp.replace(" UTC", "Z")) : null,
-        message: message.trim(),
+        message: cleanedMessage,
       };
     })
     .filter((log) => log !== null);
